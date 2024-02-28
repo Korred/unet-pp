@@ -85,9 +85,7 @@ def copy_images(output_path: str) -> None:
         # Skip test folder- test folder
         if "test" not in root:
             for file in files:
-                # Choose images
-                # if img.endswith(IMG_SUFFIX) or img.endswith(MASK_SUFFIX):
-                # replace the suffix with the new suffix
+                # Iterate over all images/masks, rewrite their suffix and move them
                 for suffix, replacement in SUFFIX_REPLACEMENT.items():
                     if file.endswith(suffix):
                         new_filename = file.replace(suffix, replacement)
