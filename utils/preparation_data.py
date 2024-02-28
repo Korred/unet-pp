@@ -10,6 +10,12 @@ from typing import Optional
 from typing_extensions import Annotated
 
 
+CS_IMG_SUFFIX = "_leftImg8bit.png"
+CS_MASK_SUFFIX = "_gtFine_labelIds.png"
+
+TARGET_IMG_SUFFIX = "_input.png"
+TARGET_MASK_SUFFIX = "_mask.png"
+
 app = typer.Typer()
 
 
@@ -73,12 +79,10 @@ def copy_images(output_path: str) -> None:
     Copy images and masks from input_zip_file to input_path.
     """
     TEMP_PATH = output_path + "\\temp\\"
-    IMG_SUFFIX = "_leftImg8bit.png"
-    MASK_SUFFIX = "_gtFine_labelIds.png"
 
     SUFFIX_REPLACEMENT = {
-        IMG_SUFFIX: "_input.png",
-        MASK_SUFFIX: "_mask.png",
+        CS_IMG_SUFFIX: TARGET_IMG_SUFFIX,
+        CS_MASK_SUFFIX: TARGET_MASK_SUFFIX,
     }
 
     for root, _, files in os.walk(TEMP_PATH):
@@ -100,11 +104,8 @@ def copy_images(output_path: str) -> None:
 
 def create_masks_by_class(output_path: str, class_to_keep: list[str] = []):
 
-    MASK_SUFFIX = "_mask.png"
-    IMG_SUFFIX = "_input.png"
-
     for image_file in os.listdir(output_path):
-        if image_file.endswith(MASK_SUFFIX):
+        if image_file.endswith(TARGET_MASK_SUFFIX):
             image_path = os.path.join(output_path, image_file)
             # Read the image using cv2.imread
             image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -121,7 +122,7 @@ def create_masks_by_class(output_path: str, class_to_keep: list[str] = []):
                 mask_file_path = os.path.join(output_path, image_file)
                 cleaned_mask = image
 
-            input_file = image_file.replace(MASK_SUFFIX, IMG_SUFFIX)
+            input_file = image_file.replace(TARGET_MASK_SUFFIX, TARGET_IMG_SUFFIX)
             input_file_path = os.path.join(output_path, input_file)
             if np.all(cleaned_mask == mask_value):
                 # Delete input and mask file
