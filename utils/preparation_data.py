@@ -82,7 +82,7 @@ def copy_images(output_path: str) -> None:
     }
 
     for root, _, files in os.walk(TEMP_PATH):
-        # Skip test folder because it does not have correct mask
+        # Skip test folder- test folder
         if "test" not in root:
             for file in files:
                 # Choose images
@@ -102,26 +102,29 @@ def copy_images(output_path: str) -> None:
 
 def create_masks_by_class(output_path: str, class_to_keep: list[str] = []):
 
-    if class_to_keep:
-        # Get the labels of the classes to keep
-        labels = [cls.id for cls in CityScapesClasses if cls.name in class_to_keep]
-    else:
-        # Keep all classes
-        labels = [cls.id for cls in CityScapesClasses]
+    MASK_SUFFIX = "_mask.png"
+    IMG_SUFFIX = "_input.png"
 
     for image_file in os.listdir(output_path):
-        if image_file.endswith("_mask.png"):
+        if image_file.endswith(MASK_SUFFIX):
             image_path = os.path.join(output_path, image_file)
             # Read the image using cv2.imread
             image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-            mask = np.isin(image, labels)
-            mask_value = 0
-            cleaned_mask = np.where(mask, image, mask_value)
-            mask_file_path = os.path.join(output_path, image_file)
+            if class_to_keep:
+                # Get the labels of the classes to keep
+                labels = [
+                    cls.id for cls in CityScapesClasses if cls.name in class_to_keep
+                ]
+                mask = np.isin(image, labels)
+                mask_value = 0
+                cleaned_mask = np.where(mask, image, mask_value)
+                mask_file_path = os.path.join(output_path, image_file)
+            else:
+                mask_file_path = os.path.join(output_path, image_file)
+                cleaned_mask = image
 
-            input_file = image_file.replace("_mask.png", "_input.png")
+            input_file = image_file.replace(MASK_SUFFIX, IMG_SUFFIX)
             input_file_path = os.path.join(output_path, input_file)
-
             if np.all(cleaned_mask == mask_value):
                 # Delete input and mask file
                 if os.path.exists(input_file_path):
