@@ -2,10 +2,13 @@ import shutil
 import zipfile
 import typer
 import os
-from typing import Tuple
+from typing import Tuple, List
 from dataclasses import dataclass
 import cv2
 import numpy as np
+from typing import Optional
+from typing_extensions import Annotated
+
 
 app = typer.Typer()
 
@@ -97,10 +100,14 @@ def copy_images(output_path: str) -> None:
     shutil.rmtree(TEMP_PATH)
 
 
-# @app.command()
 def create_masks_by_class(output_path: str, class_to_keep: list[str] = []):
 
-    labels = [cls.id for cls in CityScapesClasses if cls.name in class_to_keep]
+    if class_to_keep:
+        # Get the labels of the classes to keep
+        labels = [cls.id for cls in CityScapesClasses if cls.name in class_to_keep]
+    else:
+        # Keep all classes
+        labels = [cls.id for cls in CityScapesClasses]
 
     for image_file in os.listdir(output_path):
         if image_file.endswith("_mask.png"):
@@ -135,7 +142,7 @@ def process_data(
     input_zip_path: str,
     mask_zip_path: str,
     output_path: str,
-    class_to_keep: list[str],
+    class_to_keep: Annotated[Optional[List[str]], typer.Argument()] = None,
 ):
     # TODO: Add support for other datasets
     # TODO: Validate input paths and class_to_keep
