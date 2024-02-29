@@ -2,7 +2,7 @@ import shutil
 import zipfile
 import typer
 import os
-from typing import Tuple, List
+from typing import Tuple
 from dataclasses import dataclass
 import cv2
 import numpy as np
@@ -61,7 +61,6 @@ CityScapesClasses = [
     CityScapesClass("train", 31, (0, 80, 100)),
     CityScapesClass("motorcycle", 32, (0, 0, 230)),
     CityScapesClass("bicycle", 33, (119, 11, 32)),
-    CityScapesClass("license plate", -1, (0, 0, 142)),
 ]
 
 
@@ -102,8 +101,9 @@ def copy_images(output_path: str) -> None:
     shutil.rmtree(TEMP_PATH)
 
 
-def create_masks_by_class(output_path: str, class_to_keep: list[str] = []):
+def create_masks_by_class(output_path: str, class_to_keep: str = ""):
 
+    # class_to_keep = class_to_keep_str.split(",") if class_to_keep_str else []
     for image_file in os.listdir(output_path):
         if image_file.endswith(TARGET_MASK_SUFFIX):
             image_path = os.path.join(output_path, image_file)
@@ -144,7 +144,7 @@ def process_data(
     input_zip_path: str,
     mask_zip_path: str,
     output_path: str,
-    class_to_keep: Annotated[Optional[List[str]], typer.Argument()] = None,
+    class_to_keep: Annotated[Optional[str], typer.Argument()] = None,
 ):
     # TODO: Add support for other datasets
     # TODO: Validate input paths and class_to_keep

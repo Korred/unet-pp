@@ -28,7 +28,7 @@ python preprocessing_data.py --dataset "cityscapes" --input_zip_path "./path/to/
 - `--input_zip_path`: The path to the ZIP file containing the input data.
 - `--mask_zip_path`: The path to the ZIP file containing the mask data.
 - `--output_path`: The path where the processed/prepared dataset will be saved.
-- `--class_to_keep`: (Optional) A list of classes to retain. If specified, the tool will exclude any inputs/masks where none of the specified classes are present, and it will create grayscale masks exclusively for the specified classes (setting all other classes to 0 or black).
+- `--class_to_keep`: (Optional) A string of classes to retain. If specified, the tool will exclude any inputs/masks where none of the specified classes are present, and it will create grayscale masks exclusively for the specified classes (setting all other classes to 0 or black).
 
 #### Additional Notes
 - The `class_to_keep` parameter allows for selective data processing, which can be particularly useful for focused model training or testing.
