@@ -2,12 +2,11 @@ import shutil
 import zipfile
 import typer
 import os
-from typing import Tuple
+from typing import Tuple, List
 from dataclasses import dataclass
 import cv2
 import numpy as np
 from typing import Optional
-from typing_extensions import Annotated
 
 
 CS_IMG_SUFFIX = "_leftImg8bit.png"
@@ -103,7 +102,6 @@ def copy_images(output_path: str) -> None:
 
 def create_masks_by_class(output_path: str, class_to_keep: str = ""):
 
-    # class_to_keep = class_to_keep_str.split(",") if class_to_keep_str else []
     for image_file in os.listdir(output_path):
         if image_file.endswith(TARGET_MASK_SUFFIX):
             image_path = os.path.join(output_path, image_file)
@@ -144,7 +142,7 @@ def process_data(
     input_zip_path: str,
     mask_zip_path: str,
     output_path: str,
-    class_to_keep: Annotated[Optional[str], typer.Argument()] = None,
+    class_to_keep: Optional[List[str]] = typer.Argument(None),
 ):
     # TODO: Add support for other datasets
     # TODO: Validate input paths and class_to_keep
@@ -159,8 +157,9 @@ def process_data(
         copy_images(output_path)
 
         if class_to_keep:
-            typer.echo(f"Creating masks for classes: {class_to_keep}")
-            create_masks_by_class(output_path, class_to_keep)
+            class_to_keep_str = ",".join(class_to_keep)
+            typer.echo(f"Creating masks for classes: {class_to_keep_str}")
+            create_masks_by_class(output_path, class_to_keep_str)
 
         typer.echo("Data processing complete.")
 
