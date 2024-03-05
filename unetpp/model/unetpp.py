@@ -4,6 +4,7 @@ from typing import Tuple
 # For some reason, the tensorflow.keras cannot be resolved in the IDE (both PyCharm and VSCode)
 from keras.layers import (
     Activation,
+    Average,
     Conv2D,
     Conv2DTranspose,
     Input,
@@ -31,8 +32,8 @@ class UNetPlusPlus:
 
     @num_classes.setter
     def num_classes(self, value: int) -> None:
-        if not isinstance(value, int) or value <= 0:
-            raise ValueError("Number of classes must be a positive integer.")
+        if not isinstance(value, int) or value < 2:
+            raise ValueError("Number of classes must be an integer >= 2.")
 
         self._num_classes = value
 
@@ -169,22 +170,18 @@ class UNetPlusPlus:
         d_04 = self._conv_block(filters[0])(d_04)
 
         # Output layer(s)
-        # Different activation function depending on the number of classes
-        # e.g. binary classification: sigmoid, multi-class classification: softmax
+        s_01_output = Conv2D(self.num_classes, (1, 1), activation="softmax")(s_01)
+        s_02_output = Conv2D(self.num_classes, (1, 1), activation="softmax")(s_02)
+        s_03_output = Conv2D(self.num_classes, (1, 1), activation="softmax")(s_03)
+        d_04_output = Conv2D(self.num_classes, (1, 1), activation="softmax")(d_04)
 
-        activation = "sigmoid" if self.num_classes == 1 else "softmax"
+        # By default, the model outputs the result of the last layer
+        outputs = d_04_output
 
-        s_01_output = Conv2D(self.num_classes, (1, 1), activation=activation)(s_01)
-        s_02_output = Conv2D(self.num_classes, (1, 1), activation=activation)(s_02)
-        s_03_output = Conv2D(self.num_classes, (1, 1), activation=activation)(s_03)
-        d_04_output = Conv2D(self.num_classes, (1, 1), activation=activation)(d_04)
-
+        # If deep supervision is enabled, the model outputs the average of the results of the skip connections and the last layer
         if self.deep_supervision:
-            model = Model(
-                inputs=model_input,
-                outputs=[s_01_output, s_02_output, s_03_output, d_04_output],
-            )
-        else:
-            model = Model(inputs=model_input, outputs=d_04_output)
+            outputs = Average()([s_01_output, s_02_output, s_03_output, d_04_output])
+
+        model = Model(inputs=model_input, outputs=outputs)
 
         return model
