@@ -5,7 +5,7 @@ from keras.preprocessing.image import load_img, img_to_array
 from typing import Tuple
 
 
-from utils.images import ImageMaskPairPaths, split_mask_into_binary
+from unetpp.utils.images import ImageMaskPairPaths, split_mask_into_binary
 
 
 class SegmentationGenerator(Sequence):
