@@ -27,3 +27,12 @@ def split_mask_into_binary(mask: np.ndarray, colormap: List[int]) -> np.ndarray:
 
 def join_binary_masks(mask: np.ndarray, colormap: List[int]) -> np.ndarray:
     return np.sum([mask[..., i, None] * c for i, c in enumerate(colormap)], axis=0)
+
+def softmax_to_argmax(mask: np.ndarray) -> np.ndarray:
+    binary_mask = np.zeros_like(mask)
+    max_indices = np.argmax(mask, axis=-1)
+
+    for i in range(mask.shape[-1]):
+        binary_mask[:, :, i] = (max_indices == i).astype(int)
+
+    return binary_mask
