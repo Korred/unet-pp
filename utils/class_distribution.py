@@ -25,7 +25,7 @@ def get_class_distribution(input_path: str, classes: Dict[int, str]) -> Table:
     Get the class distribution of the masks in the input_path
     """
     class_distribution_pixelwise = defaultdict(int)
-    images_per_class = defaultdict(int)
+    class_distribution_imagewise = defaultdict(int)
     all_pixels = 0
     total_images = 0
 
@@ -42,7 +42,7 @@ def get_class_distribution(input_path: str, classes: Dict[int, str]) -> Table:
             # Add the counts to the dictionary
             for cls, count in zip(unique, counts):
                 class_distribution_pixelwise[cls] += count
-                images_per_class[cls] += 1
+                class_distribution_imagewise[cls] += 1
 
     # Create class distribution table
     class_distribution_table = Table(title="Class Distribution")
@@ -58,13 +58,13 @@ def get_class_distribution(input_path: str, classes: Dict[int, str]) -> Table:
 
     for cls, count in sorted_data:
         pixel_percentage = count / all_pixels
-        image_percentage = images_per_class[cls] / total_images
+        image_percentage = class_distribution_imagewise[cls] / total_images
         class_name = classes.get(cls, "Unknown")
         class_distribution_table.add_row(
             str(cls),
             class_name,
             f"{pixel_percentage:.2%}",
-            str(images_per_class[cls]),
+            str(class_distribution_imagewise[cls]),
             f"{image_percentage:.2%}",
         )
 
