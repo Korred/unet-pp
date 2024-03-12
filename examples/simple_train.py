@@ -23,7 +23,7 @@ CHECKPOINT_FOLDER_PATH = "path/to/checkpoint/folder"
 MODEL_FOLDER_PATH = "path/to/model/folder"
 
 EPOCHS = 60
-INPUT_SHAPE = (128, 256, 3)  # (height, width, channels)
+INPUT_SHAPE = (256, 512, 3)  # (height, width, channels)
 COLORMAPS = [0, 24, 26]  # Colormaps for the masks / classes / labels
 
 NOW_STR = datetime.now().strftime("%y%m%d_%H%M%S")
