@@ -10,23 +10,14 @@ def dice_coefficient(y_actual: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     return dice_coefficient
 
 
-# # focal loss
-def focal_loss(alpha=0.25, gamma=2.0):
-    def focal_crossentropy(y_true, y_pred):
-        y_true = tf.cast(y_true, tf.float32)  # Convert y_true to float32
-        y_pred = tf.cast(y_pred, tf.float32)  # Convert y_pred to float32
-        bce = kb.binary_crossentropy(y_true, y_pred)
-
-        y_pred = kb.clip(y_pred, kb.epsilon(), 1.0 - kb.epsilon())
-        p_t = (y_true * y_pred) + ((1 - y_true) * (1 - y_pred))
-
-        alpha_factor = 1
-        modulating_factor = 1
-
-        alpha_factor = y_true * alpha + ((1 - alpha) * (1 - y_true))
-        modulating_factor = kb.pow((1 - p_t), gamma)
-
-        # compute the final loss and return
-        return kb.mean(alpha_factor * modulating_factor * bce, axis=-1)
-
-    return focal_crossentropy
+# Source: https://medium.com/@rmoklesur/reasons-to-choose-focal-loss-over-cross-entropy-5fdccb25d282
+def focal_loss_(y_true, y_pred, alpha=0.25, gamma=2.0):
+    """Focal loss for multi-class classification."""
+    y_true = tf.cast(y_true, tf.float32)  # Convert y_true to float32
+    y_pred = tf.cast(y_pred, tf.float32)  # Convert y_pred to float32
+    epsilon = tf.keras.backend.epsilon()
+    y_pred = tf.clip_by_value(y_pred, epsilon, 1.0 - epsilon)
+    cross_entropy = -y_true * tf.math.log(y_pred)
+    weight = alpha * y_true * tf.math.pow(1 - y_pred, gamma)
+    loss = weight * cross_entropy
+    return tf.reduce_sum(loss, axis=1)
