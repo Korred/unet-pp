@@ -4,9 +4,9 @@ import numpy as np
 from rich.console import Console
 from rich.table import Table
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, Optional
 import typer
-from dataclasses import dataclass
+
 
 # We need to add the unetpp package to the system path so that we can import it
 import sys
@@ -18,16 +18,11 @@ sys.path.append(str(unetpp_path))
 from utils.preparation_data import CityScapesClasses
 
 
-@dataclass
-class Sufixes:
-    TARGET_MASK_SUFFIX: str
-
-
 app = typer.Typer()
 
 
 def get_class_distribution(
-    input_path: str, classes: Dict[int, str], suffixes: Sufixes
+    input_path: str, classes: Dict[int, str], suffix: str = ""
 ) -> Table:
     """
     Get the class distribution of the masks in the input_path
@@ -39,19 +34,20 @@ def get_class_distribution(
 
     for image_file in os.listdir(input_path):
         filename, extension = os.path.splitext(image_file)
-        if filename.endswith(suffixes.TARGET_MASK_SUFFIX):
-            total_images += 1
-            image_path = os.path.join(input_path, image_file)
-            # Read the image using cv2.imread
-            image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-            # Count all pixels
-            all_pixels += image.size
-            # Get the unique classes and their counts
-            unique, counts = np.unique(image, return_counts=True)
-            # Add the counts to the dictionary
-            for cls, count in zip(unique, counts):
-                class_distribution_pixelwise[cls] += count
-                class_distribution_imagewise[cls] += 1
+        if suffix and not filename.endswith(suffix):
+            continue
+        total_images += 1
+        image_path = os.path.join(input_path, image_file)
+        # Read the image using cv2.imread
+        image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        # Count all pixels
+        all_pixels += image.size
+        # Get the unique classes and their counts
+        unique, counts = np.unique(image, return_counts=True)
+        # Add the counts to the dictionary
+        for cls, count in zip(unique, counts):
+            class_distribution_pixelwise[cls] += count
+            class_distribution_imagewise[cls] += 1
 
     # Create class distribution table
     class_distribution_table = Table(title="Class Distribution")
@@ -81,15 +77,17 @@ def get_class_distribution(
 
 
 @app.command()
-def calculate_class_distribution(input_path: str, target_mask_suffix: str):
+def calculate_class_distribution(
+    input_path: str, target_mask_suffix: Optional[str] = typer.Argument(None)
+):
     """
     Calculate class distribution from masks in the input_path.
     """
-    suffixes = Sufixes(target_mask_suffix)
+
     console = Console()
     typer.echo(f"Calculating class distribution for masks in {input_path}")
     class_distribution_table = get_class_distribution(
-        input_path, {cls.id: cls.name for cls in CityScapesClasses}, suffixes
+        input_path, {cls.id: cls.name for cls in CityScapesClasses}, target_mask_suffix
     )
 
     console.print("Class Distribution:")

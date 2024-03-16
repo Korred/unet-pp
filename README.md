@@ -45,3 +45,21 @@ For convenience, we added a CLI tool designed for preparing the Cityscapes datas
 * Skip the `test`  folder from dataset. Test folder: used for testing on evaluation server. The annotations are not public, but we include annotations of ego-vehicle and rectification border for convenience.
 
 Please ensure to follow these guidelines closely to prepare your dataset correctly for optimal testing and evaluation of our U-Net++ implementation.
+
+## Classes Distribution 
+
+To check the class distribution in maskes image you can use the CLI tool
+#### CLI Tool Parameters
+
+- `--input_path`: The path to the file containing the input data.
+- `--target_mask_suffix`: (Optional) Specifies the suffix to be appended to the target mask file names if there are different files in the input path 
+
+#### Using the CLI Tool
+  - Execute the following command to check the classes distribution if there are only the masks you are interested in in the input path
+    ```shell
+    python classes_distribution.py --input_path "./path/to/masks"
+    ```
+  - Execute the following command to check the classes distribution if your masks have a suffix in the input path
+    ```shell
+    python classes_distribution.py --input_path "./path/to/masks" --target_mask_suffix suffix_name
+    ```
