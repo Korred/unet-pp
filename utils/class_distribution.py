@@ -6,6 +6,7 @@ from rich.table import Table
 from collections import defaultdict
 from typing import Dict
 import typer
+from dataclasses import dataclass
 
 # We need to add the unetpp package to the system path so that we can import it
 import sys
@@ -16,11 +17,18 @@ sys.path.append(str(unetpp_path))
 
 from utils.preparation_data import CityScapesClasses
 
-TARGET_MASK_SUFFIX = "_mask.png"
+
+@dataclass
+class Sufixes:
+    TARGET_MASK_SUFFIX: str
+
+
 app = typer.Typer()
 
 
-def get_class_distribution(input_path: str, classes: Dict[int, str]) -> Table:
+def get_class_distribution(
+    input_path: str, classes: Dict[int, str], suffixes: Sufixes
+) -> Table:
     """
     Get the class distribution of the masks in the input_path
     """
@@ -30,7 +38,8 @@ def get_class_distribution(input_path: str, classes: Dict[int, str]) -> Table:
     total_images = 0
 
     for image_file in os.listdir(input_path):
-        if image_file.endswith(TARGET_MASK_SUFFIX):
+        filename, extension = os.path.splitext(image_file)
+        if filename.endswith(suffixes.TARGET_MASK_SUFFIX):
             total_images += 1
             image_path = os.path.join(input_path, image_file)
             # Read the image using cv2.imread
@@ -72,14 +81,15 @@ def get_class_distribution(input_path: str, classes: Dict[int, str]) -> Table:
 
 
 @app.command()
-def calculate_class_distribution(input_path: str):
+def calculate_class_distribution(input_path: str, target_mask_suffix: str):
     """
     Calculate class distribution from masks in the input_path.
     """
+    suffixes = Sufixes(target_mask_suffix)
     console = Console()
     typer.echo(f"Calculating class distribution for masks in {input_path}")
     class_distribution_table = get_class_distribution(
-        input_path, {cls.id: cls.name for cls in CityScapesClasses}
+        input_path, {cls.id: cls.name for cls in CityScapesClasses}, suffixes
     )
 
     console.print("Class Distribution:")
