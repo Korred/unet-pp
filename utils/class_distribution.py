@@ -59,7 +59,7 @@ def get_class_distribution(input_path: str, classes: Dict[int, str]) -> Table:
     for cls, count in sorted_data:
         pixel_percentage = count / all_pixels
         image_percentage = class_distribution_imagewise[cls] / total_images
-        class_name = classes.get(cls, "Unknown")
+        class_name = classes.get(cls, "unknown")
         class_distribution_table.add_row(
             str(cls),
             class_name,
