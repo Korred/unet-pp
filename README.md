@@ -2,6 +2,8 @@
 
 A simple UNet++ implementation (with Python and Tensorflow) created as the final project for our postgraduate studies, "Artificial intelligence and automation of business processes in practical terms" at the Gdańsk University of Technology (Polish: "Sztuczna inteligencja i automatyzacja procesów biznesowych w ujęciu praktycznym"). This project provides an educational framework for demonstrating the capabilities and applications of UNet++ in image segmentation tasks.
 
+![sample result](presentation/sample_result.png)
+
 
 ## Table of Contents
 - [Getting Started](#getting-started)
