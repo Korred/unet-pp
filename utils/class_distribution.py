@@ -1,13 +1,3 @@
-import os
-import cv2
-import numpy as np
-from rich.console import Console
-from rich.table import Table
-from collections import defaultdict
-from typing import Dict, Optional
-import typer
-
-
 # We need to add the unetpp package to the system path so that we can import it
 import sys
 from pathlib import PurePath
@@ -15,14 +5,24 @@ from pathlib import PurePath
 unetpp_path = PurePath(__file__).parent.parent
 sys.path.append(str(unetpp_path))
 
-from utils.preparation_data import CityScapesClasses
 
+import os
+from collections import defaultdict
+from typing import Dict, Optional
+
+import cv2
+import numpy as np
+import typer
+from rich.console import Console
+from rich.table import Table
+
+from utils.preparation_data import CityScapesClasses
 
 app = typer.Typer()
 
 
 def get_class_distribution(
-    input_path: str, classes: Dict[int, str], suffix: str = ""
+    input_path: str, classes: Dict[int, str], suffix: str = "_mask"
 ) -> Table:
     """
     Get the class distribution of the masks in the input_path
@@ -33,7 +33,7 @@ def get_class_distribution(
     total_images = 0
 
     for image_file in os.listdir(input_path):
-        filename, extension = os.path.splitext(image_file)
+        filename, _ = os.path.splitext(image_file)
         if suffix and not filename.endswith(suffix):
             continue
         total_images += 1
