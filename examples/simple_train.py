@@ -6,25 +6,38 @@ unetpp_path = PurePath(__file__).parent.parent
 sys.path.append(str(unetpp_path))
 
 # Import the necessary packages
-from unetpp.model.unetpp import UNetPlusPlus
-from unetpp.generators.default import SegmentationGenerator
-from unetpp.utils.images import get_image_mask_pair_paths
-from unetpp.utils.functions import dice_coefficient
-from unetpp.utils.datasets import train_test_val_split
-
-from keras.optimizers import Adam
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-
 from datetime import datetime
+
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.optimizers import Adam
+
+from unetpp.generators.default import SegmentationGenerator
+from unetpp.model.unetpp import UNetPlusPlus
+from unetpp.utils.datasets import train_test_val_split
+from unetpp.utils.functions import dice_coefficient
+from unetpp.utils.images import get_image_mask_pair_paths
 
 # Replace the following paths with the actual paths
 DATASET_FOLDER_PATH = "path/to/dataset/folder"
 CHECKPOINT_FOLDER_PATH = "path/to/checkpoint/folder"
 MODEL_FOLDER_PATH = "path/to/model/folder"
 
-EPOCHS = 60
+EPOCHS = 100
 INPUT_SHAPE = (256, 512, 3)  # (height, width, channels)
-COLORMAPS = [0, 24, 26]  # Colormaps for the masks / classes / labels
+COLORMAPS = [
+    0,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+]  # Colormaps for the masks / classes / labels
+BATCH_SIZE = 4  # Adjust this to your system's capabilities e.g. INPUT_SHAPE + COLORMAPS + BATCH_SIZE affects memory usage
 
 NOW_STR = datetime.now().strftime("%y%m%d_%H%M%S")
 
@@ -45,14 +58,14 @@ train_generator = SegmentationGenerator(
     train_paths,
     colormap=COLORMAPS,
     target_size=INPUT_SHAPE[:2],
-    batch_size=16,
+    batch_size=BATCH_SIZE,
     shuffle=True,
 )
 validation_generator = SegmentationGenerator(
     val_paths,
     colormap=COLORMAPS,
     target_size=INPUT_SHAPE[:2],
-    batch_size=16,
+    batch_size=BATCH_SIZE,
     shuffle=True,
 )
 

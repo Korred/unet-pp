@@ -1,28 +1,50 @@
-from typing import Tuple
+import contextlib
+from typing import Tuple, Optional
+
+import tensorflow as tf
 
 # Instead of using tensorflow.keras, we use the keras module directly
 # For some reason, the tensorflow.keras cannot be resolved in the IDE (both PyCharm and VSCode)
 from keras.layers import (
     Activation,
     Average,
+    BatchNormalization,
     Conv2D,
     Conv2DTranspose,
+    Dropout,
     Input,
     MaxPooling2D,
+    SpatialDropout2D,
     concatenate,
 )
 from keras.models import Model
 
 
 class UNetPlusPlus:
-    def __init__(self, input_shape, num_classes, deep_supervision=False):
+    def __init__(
+        self,
+        input_shape: Tuple[int, int, int],
+        num_classes: int,
+        deep_supervision: bool = False,
+        batch_normalization: bool = False,
+        conv_activation: str = "relu",
+        dropout: bool = False,
+        dropout_type: Optional[str] = None,
+        dropout_rate: float = 0.0,
+    ):
         # For now let us assume a model with 4 levels e.g. 4 down-sampling and 4 up-sampling
         # TODO: Add support for different number of levels
-
         self.input_shape = input_shape
         self.num_classes = num_classes
         self.deep_supervision = deep_supervision
+        self.batch_normalization = batch_normalization
+        self.conv_activation = conv_activation
+        self.dropout = dropout
+        self.dropout_type = dropout_type
+        self.dropout_rate = dropout_rate
+
         self.init_filters = 64
+
         self.model = self.build_model()
 
     # In order to keep the __init__ method clean, we use setters for the param validation
@@ -58,15 +80,54 @@ class UNetPlusPlus:
 
         self._input_shape = value
 
-    def _conv_block(self, filters, kernel_size=3) -> Model:
+    @property
+    def dropout_type(self) -> str:
+        return self._dropout_type
+
+    @dropout_type.setter
+    def dropout_type(self, value: str) -> None:
+        if self.dropout and value not in ["simple", "spatial"]:
+            raise ValueError("Invalid dropout type. Must be 'simple' or 'spatial'.")
+
+        self._dropout_type = value
+
+    @contextlib.contextmanager
+    def options(self, options):
+        old_opts = tf.config.optimizer.get_experimental_options()
+        tf.config.optimizer.set_experimental_options(options)
+        try:
+            yield
+        finally:
+            tf.config.optimizer.set_experimental_options(old_opts)
+
+    def _dropout_layer(self):
+        def layer(x):
+            # Workaround for:
+            # E tensorflow/core/grappler/optimizers/meta_optimizer.cc:954] layout failed: INVALID_ARGUMENT: Size of values 0 does not match size of permutation 4
+            # @ fanin shape inmodel/dropout/dropout/SelectV2-2-TransposeNHWCToNCHW-LayoutOptimizer
+            # See: https://github.com/tensorflow/tensorflow/issues/34499#issuecomment-1695504189
+
+            with self.options({"layout_optimizer": False}):
+                if self.dropout_type == "simple":
+                    x = Dropout(self.dropout_rate)(x)
+                elif self.dropout_type == "spatial":
+                    x = SpatialDropout2D(self.dropout_rate)(x)
+                return x
+
+        return layer
+
+    def _conv_block(self, filters, kernel_size=3):
         # Mimic the function signature of other keras layers
-        def layer(input_layer):
-            # TODO: Discuss the use of batch normalization and dropout e.g. implement as optional parameters 'batch_norm' and 'dropout'
-            # We decided to use padding='same' and strides=(1,1) to avoid shrinking of the input image/feature maps
-            x = Conv2D(filters, kernel_size, padding="same")(input_layer)
-            x = Activation("relu")(x)
-            x = Conv2D(filters, kernel_size, padding="same")(x)
-            x = Activation("relu")(x)
+        def layer(x):
+            for _ in range(2):
+                # We decided to use padding='same' and strides=(1,1) to avoid shrinking of the input image/feature maps
+                x = Conv2D(filters, kernel_size, padding="same")(x)
+                if self.batch_normalization:
+                    x = BatchNormalization()(x)
+                x = Activation(self.conv_activation)(x)
+
+                if self.dropout:
+                    x = self._dropout_layer()(x)
             return x
 
         return layer
@@ -84,9 +145,6 @@ class UNetPlusPlus:
         # As opposed to the original U-Net paper:
         # - we use padding='same' to avoid shrinking of the input image/feature maps
         #   - this ensures that the output has the same spatial dimensions as the input
-        # TODO: Discuss the use of batch normalization
-        # TODO: Discuss the use of ReLU vs Leaky ReLU
-        # TODO: Discuss the use of dropout
 
         # Hard-coded number of levels for now
         filters = [self.init_filters * 2**i for i in range(5)]
