@@ -6,18 +6,18 @@ unetpp_path = PurePath(__file__).parent.parent
 sys.path.append(str(unetpp_path))
 
 
-import keras_tuner as kt
-from unetpp.utils.images import get_image_mask_pair_paths, get_class_weights
-from unetpp.utils.datasets import train_test_val_split
-from unetpp.generators.default import SegmentationGenerator
-from unetpp.model.unetpp import UNetPlusPlus
-from unetpp.utils.functions import dice_coefficient
-from keras.callbacks import EarlyStopping
 from datetime import datetime
 
-from keras.optimizers import Adam, SGD, Adamax
-from keras.callbacks import TensorBoard
+import keras_tuner as kt
+from keras.callbacks import EarlyStopping, TensorBoard
 from keras.losses import CategoricalCrossentropy, CategoricalFocalCrossentropy
+from keras.optimizers import SGD, Adam, Adamax
+
+from unetpp.generators.default import SegmentationGenerator
+from unetpp.model.unetpp import UNetPlusPlus
+from unetpp.utils.datasets import train_test_val_split
+from unetpp.utils.functions import dice_coefficient
+from unetpp.utils.images import get_class_weights, get_image_mask_pair_paths
 
 # Replace the following paths with the actual paths
 DATASET_FOLDER_PATH = "/home/korred/repos/unet-pp/data/output/"
@@ -68,7 +68,6 @@ class_weights = list(class_weights.values())
 
 # Define the model building function
 def model_builder(hp):
-
     # Optimizers lookup
     OPTIMIZER_LKP = {
         "adam": Adam,
@@ -89,7 +88,6 @@ def model_builder(hp):
     optimizer = hp.Choice("optimizer", values=list(OPTIMIZER_LKP.keys()))
     learning_rate = hp.Choice("learning_rate", values=[0.01, 0.001, 0.0001])
 
-
     # Dropout params
     dropout = hp.Boolean("dropout", default=False)
     with hp.conditional_scope("dropout", [True]):
@@ -102,18 +100,22 @@ def model_builder(hp):
             dropout_type = None
             dropout_rate = 0.0
 
-
     # Loss function params
-    loss_function_choice = hp.Choice("loss_function_choice", values=list(LOSS_FUNCTION_LKP.keys()))
+    loss_function_choice = hp.Choice(
+        "loss_function_choice", values=list(LOSS_FUNCTION_LKP.keys())
+    )
     with hp.conditional_scope("loss_function_choice", ["categorical_crossentropy"]):
         if loss_function_choice == "categorical_crossentropy":
             loss_function = LOSS_FUNCTION_LKP[loss_function_choice]()
 
-    with hp.conditional_scope("loss_function_choice", ["categorical_focal_crossentropy"]):
+    with hp.conditional_scope(
+        "loss_function_choice", ["categorical_focal_crossentropy"]
+    ):
         if loss_function_choice == "categorical_focal_crossentropy":
             gamma = hp.Choice("gamma", values=[0.5, 1.0, 2.0])
-            loss_function = LOSS_FUNCTION_LKP[loss_function_choice](alpha=class_weights, gamma=gamma)
-
+            loss_function = LOSS_FUNCTION_LKP[loss_function_choice](
+                alpha=class_weights, gamma=gamma
+            )
 
     # Build the model
     model = UNetPlusPlus(
@@ -140,11 +142,13 @@ def model_builder(hp):
 # Instantiate the tuner
 tuner = kt.Hyperband(
     model_builder,
-    objective=kt.Objective("val_dice_coefficient", 'max'), # When using models with different loss functions, use the same metric to compare/maximize them
+    objective=kt.Objective(
+        "val_dice_coefficient", "max"
+    ),  # When using models with different loss functions, use the same metric to compare/maximize them
     max_epochs=EPOCHS,
     hyperband_iterations=1,
     directory=str(PurePath(TUNER_PROJECT_FOLDER)),
-    project_name="unetpp_tuning"
+    project_name="unetpp_tuning",
 )
 
 early_stopping_callback = EarlyStopping(
@@ -163,6 +167,8 @@ tuner.search(
 print("TUNING DONE")
 tuner.results_summary()
 
+
+# Uncomment the following code save the top 3 (unique) models and based on the hyperparameters found by the tuner
 """
 top_100_params = tuner.get_best_hyperparameters(100)
 distinct_top_3_models = []
@@ -210,8 +216,6 @@ for i, hp in enumerate(top_100_params):
         )
 
         hypermodel.save(model_filename)
-
-
 
     if len(distinct_top_3_models) == 3:
         break
